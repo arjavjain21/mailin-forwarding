@@ -1,0 +1,4 @@
+domain,forward_to,provider
+microsoft-domain-example.com,brand.com,azure
+standard-domain-example.com,brand.com,domain
+auto-detect-example.com,brand.com,auto
