@@ -9,10 +9,31 @@ It supports:
 - Automatic provider detection
 - CSV upload
 - One global redirect destination or per-row destinations
+- Query-string-only redirects, paths, full URLs, and bare domains
 - Preview before writes
 - Password-gated UI
 - API token stored server-side in Streamlit Secrets or an environment variable
 - CSV result export
+
+## Common Hyperke redirect suffix
+
+The app keeps this visible in the UI as a copy/paste reference:
+
+```text
+?utm_source=direct_outreach&utm_medium=email&utm_campaign=hyperke
+```
+
+The redirect field now accepts and preserves values such as:
+
+```text
+?utm_source=direct_outreach&utm_medium=email&utm_campaign=hyperke
+/landing?utm_source=direct_outreach&utm_medium=email&utm_campaign=hyperke
+example.com/landing?utm_source=direct_outreach
+https://example.com/landing?utm_source=direct_outreach
+example.com
+```
+
+Only surrounding whitespace is removed. Path and query-string casing are not changed.
 
 ## Important security note
 
@@ -48,7 +69,7 @@ Body:
 
 ```json
 {
-  "forward_to": "example.com"
+  "forward_to": "?utm_source=direct_outreach&utm_medium=email&utm_campaign=hyperke"
 }
 ```
 
@@ -71,7 +92,7 @@ Body:
 ```json
 {
   "domain_id": 123,
-  "forward_to": "example.com"
+  "forward_to": "/landing?utm_source=direct_outreach&utm_medium=email&utm_campaign=hyperke"
 }
 ```
 
@@ -98,17 +119,17 @@ Enter one redirect target in the app.
 
 ```csv
 domain,forward_to
-domain1.com,brand.com
-domain2.com,otherbrand.com
+domain1.com,"?utm_source=direct_outreach&utm_medium=email&utm_campaign=hyperke"
+domain2.com,"/landing?utm_source=direct_outreach&utm_medium=email&utm_campaign=hyperke"
 ```
 
 ### Force provider if needed
 
 ```csv
 domain,forward_to,provider
-domain1.com,brand.com,azure
-domain2.com,brand.com,domain
-domain3.com,brand.com,auto
+domain1.com,"?utm_source=direct_outreach&utm_medium=email&utm_campaign=hyperke",azure
+domain2.com,"/landing?utm_source=direct_outreach&utm_medium=email&utm_campaign=hyperke",domain
+domain3.com,"https://example.com/offer?utm_source=direct_outreach",auto
 ```
 
 Accepted provider aliases:
@@ -119,43 +140,18 @@ Accepted provider aliases:
 
 ## Deploy on Streamlit Community Cloud
 
-1. Create a new GitHub repository.
-2. Upload the contents of this ZIP to the repo.
-3. Do **not** create or commit `.streamlit/secrets.toml`.
-4. Go to Streamlit Community Cloud and deploy `app.py`.
-5. Open the app's **Settings → Secrets**.
-6. Add:
+1. Deploy this repository and select `app.py`.
+2. Open the app's **Settings → Secrets**.
+3. Add:
 
 ```toml
 MAILIN_API_TOKEN = "PASTE_YOUR_MAILIN_BEARER_TOKEN_HERE"
 APP_PASSWORD = "hyperkeMA"
 ```
 
-7. Save and reboot the app if Streamlit asks.
+4. Save and reboot the app if Streamlit asks.
 
-The app will now use the Mailin token automatically. Users never need to paste the API token into the UI.
-
-## Deploy elsewhere
-
-Set these environment variables:
-
-```text
-MAILIN_API_TOKEN=...
-APP_PASSWORD=hyperkeMA
-```
-
-Then run:
-
-```bash
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-For Railway / Render:
-
-```bash
-streamlit run app.py --server.address 0.0.0.0 --server.port $PORT
-```
+The app uses the Mailin token automatically. Users never need to paste it into the UI.
 
 ## Local development
 
@@ -177,10 +173,11 @@ streamlit run app.py
 
 The application deliberately:
 
-- requires exact domain matches
+- requires exact source-domain matches
 - resolves resource IDs before writes
 - previews resolved rows before changes
-- blocks malformed domains
+- blocks malformed source domains
+- allows path/query/full-URL redirect targets
 - blocks conflicting duplicate rows
 - skips unresolved rows
 - requires explicit confirmation before updates
