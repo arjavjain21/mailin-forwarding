@@ -1,4 +1,4 @@
 domain,forward_to,provider
-microsoft-domain-example.com,brand.com,azure
-standard-domain-example.com,brand.com,domain
-auto-detect-example.com,brand.com,auto
+microsoft-domain-example.com,"?utm_source=direct_outreach&utm_medium=email&utm_campaign=hyperke",azure
+standard-domain-example.com,"/landing?utm_source=direct_outreach&utm_medium=email&utm_campaign=hyperke",domain
+auto-detect-example.com,"https://example.com/offer?utm_source=direct_outreach&utm_medium=email&utm_campaign=hyperke",auto
