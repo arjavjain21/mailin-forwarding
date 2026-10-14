@@ -4,16 +4,44 @@ Streamlit app for bulk-updating Mailin domain redirects from a CSV.
 
 It supports:
 
+- Uploading inbox/email lists or domain lists
+- Automatic inbox → domain extraction
+- Deduplication to one Mailin operation per unique domain
 - Standard Mailin / SMTP domains
 - Microsoft / Azure orders
 - Automatic provider detection
-- CSV upload
 - One global redirect destination or per-row destinations
 - Query-string-only redirects, paths, full URLs, and bare domains
 - Preview before writes
 - Password-gated UI
 - API token stored server-side in Streamlit Secrets or an environment variable
 - CSV result export
+
+## Inbox deduplication
+
+You can upload an inbox list directly, for example:
+
+```csv
+email
+alice@alpha.com
+bob@alpha.com
+sales@alpha.com
+john@beta.com
+ops@beta.com
+```
+
+The app extracts the part after `@` and reduces that list to:
+
+```text
+alpha.com  → 3 inboxes
+beta.com   → 2 inboxes
+```
+
+Only the **2 unique domains** are resolved and updated through Mailin. This means a 500-inbox upload containing only 5 unique domains results in roughly 5 domain resolution/update operations rather than processing 500 inbox rows individually.
+
+Accepted source-column names include `email`, `email_address`, `inbox`, `sender`, `mailbox`, `account`, `domain`, and similar aliases.
+
+The UI displays uploaded rows, valid inboxes/rows, unique domains, duplicates removed, and the number of inboxes represented by each domain.
 
 ## Common Hyperke redirect suffix
 
@@ -23,7 +51,7 @@ The app keeps this visible in the UI as a copy/paste reference:
 ?utm_source=direct_outreach&utm_medium=email&utm_campaign=hyperke
 ```
 
-The redirect field now accepts and preserves values such as:
+The redirect field accepts and preserves values such as:
 
 ```text
 ?utm_source=direct_outreach&utm_medium=email&utm_campaign=hyperke
@@ -102,9 +130,20 @@ All API requests use:
 Authorization: Bearer YOUR_API_TOKEN
 ```
 
-## CSV format
+## CSV formats
 
-### Simplest
+### Inbox list
+
+```csv
+email
+alice@domain1.com
+bob@domain1.com
+sales@domain2.com
+```
+
+Enter one redirect target in the app. The email addresses will be collapsed to `domain1.com` and `domain2.com` before Mailin is queried.
+
+### Domain list
 
 ```csv
 domain
@@ -112,8 +151,6 @@ domain1.com
 domain2.com
 domain3.com
 ```
-
-Enter one redirect target in the app.
 
 ### Per-row redirects
 
@@ -173,12 +210,14 @@ streamlit run app.py
 
 The application deliberately:
 
+- extracts domains before Mailin lookups
+- deduplicates to one operation per unique domain
 - requires exact source-domain matches
 - resolves resource IDs before writes
 - previews resolved rows before changes
 - blocks malformed source domains
 - allows path/query/full-URL redirect targets
-- blocks conflicting duplicate rows
+- blocks conflicting instructions for the same domain
 - skips unresolved rows
 - requires explicit confirmation before updates
 - retries transient `429` and common `5xx` failures
